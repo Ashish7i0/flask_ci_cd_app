@@ -24,13 +24,14 @@ pipeline {
         }
 
         stage('Run Tests') {
-            steps {
-                sh '''
-                    . $VENV_DIR/bin/activate
-                    which pytest
-                    pytest
-                '''
-            }
+    steps {
+        sh '''
+            . .venv/bin/activate
+            pip install pytest  # Optional safety if not in requirements.txt
+            pytest
+        '''
+    }
+}
         }
 
         stage('Deploy to EC2') {
