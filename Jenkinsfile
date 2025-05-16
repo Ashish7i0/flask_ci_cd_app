@@ -12,18 +12,19 @@ pipeline {
             }
         }
 
-        stage('Setup Virtual Environment and Install Dependencies') {
+        stage('Setup Virtual Environment & Install Dependencies') {
             steps {
                 sh '''
                     python3 -m venv $VENV_DIR
                     . $VENV_DIR/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
+                    pip list
                 '''
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Tests in Virtualenv') {
             steps {
                 sh '''
                     . $VENV_DIR/bin/activate
@@ -32,11 +33,12 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy to EC2 in Virtualenv') {
             steps {
                 sshagent(['ec2-ssh']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@13.127.106.206 << 'EOF'
+                    cd ~
                     if [ -d "flask_ci_cd_app" ]; then
                         cd flask_ci_cd_app
                         git fetch origin main
