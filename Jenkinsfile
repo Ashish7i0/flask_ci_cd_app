@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Setup Virtual Environment and Install Dependencies') {
+        stage('Set up virtualenv and install dependencies') {
             steps {
                 sh '''
                     python3 -m venv $VENV_DIR
@@ -27,6 +27,7 @@ pipeline {
             steps {
                 sh '''
                     . $VENV_DIR/bin/activate
+                    which pytest
                     pytest
                 '''
             }
