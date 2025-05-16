@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_DIR = '.venv'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -8,15 +12,23 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Virtual Environment and Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
+                sh '''
+                    python3 -m venv $VENV_DIR
+                    . $VENV_DIR/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest'
+                sh '''
+                    . $VENV_DIR/bin/activate
+                    pytest
+                '''
             }
         }
 
@@ -24,13 +36,26 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@13.127.106.206 << EOF
+                    ssh -o StrictHostKeyChecking=no ubuntu@13.127.106.206 << 'EOF'
+                    if [ -d "flask_ci_cd_app" ]; then
+                        cd flask_ci_cd_app
+                        git fetch origin main
+                        git reset --hard origin/main
+                    else
+                        git clone https://github.com/Ashish7i0/flask_ci_cd_app.git
+                        cd flask_ci_cd_app
+                    fi
+
                     pkill gunicorn || true
-                    cd flask_ci_cd_app || git clone https://github.com/Ashish7i0/flask_ci_cd_app.git && cd flask_ci_cd_app
-                    git pull origin main
-                    source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+
+                    if [ ! -d "venv" ]; then
+                        python3 -m venv venv
+                    fi
+
+                    source venv/bin/activate
+                    pip install --upgrade pip
                     pip install -r requirements.txt
-                    nohup gunicorn -w 3 -b 127.0.0.1:5000 app:app &
+                    nohup gunicorn -w 3 -b 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
                     EOF
                     '''
                 }
@@ -40,10 +65,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build and Deployment Successful!'
+            echo '✅ Build and deployment succeeded!'
         }
         failure {
-            echo '❌ Build or Deployment Failed.'
+            echo '❌ Build or deployment failed.'
         }
     }
 }
