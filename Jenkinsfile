@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Set up virtual environment and install dependencies') {
+        stage('Setup Virtual Environment and Install Dependencies') {
             steps {
                 sh '''
                     python3 -m venv $VENV_DIR
