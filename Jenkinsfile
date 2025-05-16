@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Set up virtualenv and install dependencies') {
+        stage('Set up virtual environment and install dependencies') {
             steps {
                 sh '''
                     python3 -m venv $VENV_DIR
@@ -24,14 +24,12 @@ pipeline {
         }
 
         stage('Run Tests') {
-    steps {
-        sh '''
-            . .venv/bin/activate
-            pip install pytest  # Optional safety if not in requirements.txt
-            pytest
-        '''
-    }
-}
+            steps {
+                sh '''
+                    . $VENV_DIR/bin/activate
+                    pytest
+                '''
+            }
         }
 
         stage('Deploy to EC2') {
